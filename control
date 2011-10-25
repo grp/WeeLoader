@@ -1,9 +1,15 @@
-Package: weeloader
+Homepage: http://moreinfo.thebigboss.org/moreinfo/depiction.php?file=weeloaderData
+Depiction: http://moreinfo.thebigboss.org/moreinfo/depiction.php?file=weeloaderData
+Author: chpwn <support@chpwn.com>
+Maintainer: BigBoss <bigboss@thebigboss.org>
 Name: WeeLoader
+Package: com.chpwn.weeloader
+Pre-Depends: firmware (>= 5.0)
 Depends: mobilesubstrate
-Version: 0.0.1
+Section: Development
+Version: 1.0
 Architecture: iphoneos-arm
-Description: An awesome MobileSubstrate tweak!
-Maintainer: chpwn
-Author: chpwn
-Section: Tweaks
+Description: weeeeeeeeeeeeeeeeeeeeeeeee!
+Sponsor: thebigboss.org <http://thebigboss.org>
+dev: chpwn
+Tag: role::developer, purpose::extension
