@@ -28,7 +28,7 @@ static void WeeLoaderSetCurrentThreadIsLoading(BOOL loading) {
 - (NSArray *)contentsOfDirectoryAtPath:(NSString *)path error:(NSError **)error {
     if (WeeLoaderCurrentThreadIsLoading()) {
         NSArray *plugins = %orig(path, error);
-        NSArray *custom = %orig(kWeeLoaderCustomPluginDictionary, error);
+        NSArray *custom = %orig(kWeeLoaderCustomPluginDirectory, error);
 
         return [plugins arrayByAddingObjectsFromArray:custom];
     } else {
