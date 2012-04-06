@@ -2,23 +2,31 @@
 #define kWeeLoaderDefaultPluginDirectory @"/System/Library/WeeAppPlugins"
 #define kWeeLoaderCustomPluginDirectory @"/Library/WeeLoader/Plugins"
 
+#define kWeeLoaderDefaultBulletinBoardPluginDirectory @"/System/Library/BulletinBoardPlugins"
+#define kWeeLoaderCustomBulletinBoardPluginDirectory @"/Library/WeeLoader/BulletinBoardPlugins"
 
 #define kWeeLoaderThreadDictionaryKey @"WeeLoaderLoadingPlugins"
 
-static BOOL WeeLoaderCurrentThreadIsLoading() {
-    return [[[[NSThread currentThread] threadDictionary] objectForKey:kWeeLoaderThreadDictionaryKey] boolValue];
+static BOOL WeeLoaderCurrentThreadLoadingStatus() {
+    return [[[[NSThread currentThread] threadDictionary] objectForKey:kWeeLoaderThreadDictionaryKey] intValue];
 }
 
-static void WeeLoaderSetCurrentThreadIsLoading(BOOL loading) {
-    [[[NSThread currentThread] threadDictionary] setObject:[NSNumber numberWithBool:loading] forKey:kWeeLoaderThreadDictionaryKey];
+static void WeeLoaderSetCurrentThreadLoadingStatus(BOOL loading) {
+    [[[NSThread currentThread] threadDictionary] setObject:[NSNumber numberWithInt:loading] forKey:kWeeLoaderThreadDictionaryKey];
 }
 
 %hook BBServer
 
 - (void)_loadAllWeeAppSections {
-    WeeLoaderSetCurrentThreadIsLoading(YES);
+    WeeLoaderSetCurrentThreadLoadingStatus(1);
     %orig;
-    WeeLoaderSetCurrentThreadIsLoading(NO);
+    WeeLoaderSetCurrentThreadLoadingStatus(0);
+}
+
+- (void)_loadAllDataProviderPluginBundles {
+    WeeLoaderSetCurrentThreadLoadingStatus(2);
+    %orig;
+    WeeLoaderSetCurrentThreadLoadingStatus(0);
 }
 
 %end
@@ -26,13 +34,21 @@ static void WeeLoaderSetCurrentThreadIsLoading(BOOL loading) {
 %hook NSFileManager
 
 - (NSArray *)contentsOfDirectoryAtPath:(NSString *)path error:(NSError **)error {
-    if (WeeLoaderCurrentThreadIsLoading()) {
-        NSArray *plugins = %orig(path, error);
-        NSArray *custom = %orig(kWeeLoaderCustomPluginDirectory, error);
+    switch (WeeLoaderCurrentThreadLoadingStatus()) {
+        case 1: {
+            NSArray *plugins = %orig(path, error);
+            NSArray *custom = %orig(kWeeLoaderCustomPluginDirectory, error);
 
-        return [plugins arrayByAddingObjectsFromArray:custom];
-    } else {
-        return %orig;
+            return [plugins arrayByAddingObjectsFromArray:custom];
+        }
+        case 2: {
+            NSArray *plugins = %orig(path, error);
+            NSArray *custom = %orig(kWeeLoaderCustomBulletinBoardPluginDirectory, error);
+
+            return [plugins arrayByAddingObjectsFromArray:custom];
+        }
+        default:
+            return %orig;
     }
 }
 
@@ -41,17 +57,29 @@ static void WeeLoaderSetCurrentThreadIsLoading(BOOL loading) {
 %hook NSBundle
 
 + (NSBundle *)bundleWithPath:(NSString *)fullPath {
-    if (WeeLoaderCurrentThreadIsLoading()) {
-        NSBundle *bundle = %orig(fullPath);
+    switch (WeeLoaderCurrentThreadLoadingStatus()) {
+        case 1: {
+            NSBundle *bundle = %orig(fullPath);
 
-        if (bundle == nil && [fullPath hasPrefix:kWeeLoaderDefaultPluginDirectory]) {
-            fullPath = [kWeeLoaderCustomPluginDirectory stringByAppendingString:[fullPath substringFromIndex:[kWeeLoaderDefaultPluginDirectory length]]];
-            bundle = %orig(fullPath);
+            if (bundle == nil && [fullPath hasPrefix:kWeeLoaderDefaultPluginDirectory]) {
+                fullPath = [kWeeLoaderCustomPluginDirectory stringByAppendingString:[fullPath substringFromIndex:[kWeeLoaderDefaultPluginDirectory length]]];
+                bundle = %orig(fullPath);
+            }
+
+            return bundle;
         }
+        case 2: {
+            NSBundle *bundle = %orig(fullPath);
 
-        return bundle;
-    } else {
-        return %orig;
+            if (bundle == nil && [fullPath hasPrefix:kWeeLoaderDefaultBulletinBoardPluginDirectory]) {
+                fullPath = [kWeeLoaderCustomBulletinBoardPluginDirectory stringByAppendingString:[fullPath substringFromIndex:[kWeeLoaderDefaultBulletinBoardPluginDirectory length]]];
+                bundle = %orig(fullPath);
+            }
+
+            return bundle;
+        }
+        default:
+            return %orig;
     }
 }
 
