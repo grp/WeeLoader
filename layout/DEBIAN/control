@@ -7,9 +7,9 @@ Package: com.chpwn.weeloader
 Pre-Depends: firmware (>= 5.0)
 Depends: mobilesubstrate
 Section: Development
-Version: 1.0.1
+Version: 1.1
 Architecture: iphoneos-arm
-Description: weeeeeeeeeeeeeeeeeeeeeeeee!
+Description: Weeeeeeeeeeeeeeee!
 Sponsor: thebigboss.org <http://thebigboss.org>
 dev: chpwn
 Tag: role::developer, purpose::extension
