@@ -7,11 +7,11 @@
 
 #define kWeeLoaderThreadDictionaryKey @"WeeLoaderLoadingPlugins"
 
-static BOOL WeeLoaderCurrentThreadLoadingStatus() {
+static NSInteger WeeLoaderCurrentThreadLoadingStatus() {
     return [[[[NSThread currentThread] threadDictionary] objectForKey:kWeeLoaderThreadDictionaryKey] intValue];
 }
 
-static void WeeLoaderSetCurrentThreadLoadingStatus(BOOL loading) {
+static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
     [[[NSThread currentThread] threadDictionary] setObject:[NSNumber numberWithInt:loading] forKey:kWeeLoaderThreadDictionaryKey];
 }
 
