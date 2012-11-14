@@ -1,6 +1,7 @@
 
 #define kWeeLoaderDefaultPluginDirectory @"/System/Library/WeeAppPlugins"
 #define kWeeLoaderCustomPluginDirectory @"/Library/WeeLoader/Plugins"
+#define kWeeLoaderSerializationPrefix @"/WeeLoaderFailsafePathShouldNotExist"
 
 #define kWeeLoaderDefaultBulletinBoardPluginDirectory @"/System/Library/BulletinBoardPlugins"
 #define kWeeLoaderCustomBulletinBoardPluginDirectory @"/Library/WeeLoader/BulletinBoardPlugins"
@@ -27,6 +28,37 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
     WeeLoaderSetCurrentThreadLoadingStatus(2);
     %orig;
     WeeLoaderSetCurrentThreadLoadingStatus(0);
+}
+
+%end
+
+%hook BBSectionInfo
+
+- (void)encodeWithCoder:(NSCoder *)encoder {
+    WeeLoaderSetCurrentThreadLoadingStatus(3);
+    %orig;
+    WeeLoaderSetCurrentThreadLoadingStatus(0);
+}
+
+- (NSString *)pathToWeeAppPluginBundle {
+    NSString *path = %orig;
+
+    if(WeeLoaderCurrentThreadLoadingStatus() == 3) {
+        if([path hasPrefix:[NSString stringWithFormat:@"%@/", kWeeLoaderCustomPluginDirectory]]) {
+            return [NSString stringWithFormat:@"%@/%@", kWeeLoaderSerializationPrefix, path];
+        }
+    }
+
+    return path;
+}
+
+- (void)setPathToWeeAppPluginBundle:(NSString *)path {
+    NSString *prefix = [NSString stringWithFormat:@"%@/", kWeeLoaderSerializationPrefix];
+    if([path hasPrefix:prefix]) {
+        %orig([path substringFromIndex:[prefix length]]);
+    } else {
+        %orig(path);
+    }
 }
 
 %end
