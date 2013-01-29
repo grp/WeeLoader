@@ -1,5 +1,5 @@
-Homepage: http://moreinfo.thebigboss.org/moreinfo/depiction.php?file=weeloaderData
-Depiction: http://moreinfo.thebigboss.org/moreinfo/depiction.php?file=weeloaderData
+Homepage: http://moreinfo.thebigboss.org/moreinfo/depiction.php?file=weeloaderDp
+Depiction: http://moreinfo.thebigboss.org/moreinfo/depiction.php?file=weeloaderDp
 Author: chpwn <support@chpwn.com>
 Maintainer: BigBoss <bigboss@thebigboss.org>
 Name: WeeLoader
@@ -7,9 +7,9 @@ Package: com.chpwn.weeloader
 Pre-Depends: firmware (>= 5.0)
 Depends: mobilesubstrate
 Section: Development
-Version: 1.1
+Version: 1.2
 Architecture: iphoneos-arm
-Description: Weeeeeeeeeeeeeeee!
+Description: Weeeeeeeeeee! Load Wee apps safely.
 Sponsor: thebigboss.org <http://thebigboss.org>
 dev: chpwn
 Tag: role::developer, purpose::extension
