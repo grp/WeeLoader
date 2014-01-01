@@ -55,10 +55,22 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
 - (void)setPathToWeeAppPluginBundle:(NSString *)path {
     NSString *prefix = [NSString stringWithFormat:@"%@/", kWeeLoaderSerializationPrefix];
     if([path hasPrefix:prefix]) {
-        %orig([path substringFromIndex:[prefix length]]);
-    } else {
-        %orig(path);
+        path = [path substringFromIndex:[prefix length]];
+
+        NSFileManager *dfm = [NSFileManager defaultManager];
+        if (![dfm fileExistsAtPath:path]) {
+            NSString *bundle = [[path pathComponents] lastObject];
+            NSString *defaultPath = [kWeeLoaderDefaultPluginDirectory stringByAppendingPathComponent:bundle];
+            NSString *customPath = [kWeeLoaderCustomPluginDirectory stringByAppendingPathComponent:bundle];
+            if ([dfm fileExistsAtPath:defaultPath]) {
+                path = defaultPath;
+            } else if ([dfm fileExistsAtPath:customPath]) {
+                path = customPath;
+            }
+        }
     }
+
+    %orig(path);
 }
 
 %end
