@@ -1,19 +1,18 @@
+static NSString * const WeeLoaderDefaultPluginDirectory = @"/System/Library/WeeAppPlugins";
+static NSString * const WeeLoaderCustomPluginDirectory = @"/Library/WeeLoader/Plugins";
+static NSString * const WeeLoaderSerializationPrefix = @"/WeeLoaderFailsafePathShouldNotExist";
 
-#define kWeeLoaderDefaultPluginDirectory @"/System/Library/WeeAppPlugins"
-#define kWeeLoaderCustomPluginDirectory @"/Library/WeeLoader/Plugins"
-#define kWeeLoaderSerializationPrefix @"/WeeLoaderFailsafePathShouldNotExist"
+static NSString * const WeeLoaderDefaultBulletinBoardPluginDirectory = @"/System/Library/BulletinBoardPlugins";
+static NSString * const WeeLoaderCustomBulletinBoardPluginDirectory = @"/Library/WeeLoader/BulletinBoardPlugins";
 
-#define kWeeLoaderDefaultBulletinBoardPluginDirectory @"/System/Library/BulletinBoardPlugins"
-#define kWeeLoaderCustomBulletinBoardPluginDirectory @"/Library/WeeLoader/BulletinBoardPlugins"
-
-#define kWeeLoaderThreadDictionaryKey @"WeeLoaderLoadingPlugins"
+static NSString * const WeeLoaderThreadDictionaryKey = @"WeeLoaderLoadingPlugins";
 
 static NSInteger WeeLoaderCurrentThreadLoadingStatus() {
-    return [[[[NSThread currentThread] threadDictionary] objectForKey:kWeeLoaderThreadDictionaryKey] intValue];
+    return [[[[NSThread currentThread] threadDictionary] objectForKey:WeeLoaderThreadDictionaryKey] intValue];
 }
 
 static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
-    [[[NSThread currentThread] threadDictionary] setObject:[NSNumber numberWithInt:loading] forKey:kWeeLoaderThreadDictionaryKey];
+    [[[NSThread currentThread] threadDictionary] setObject:[NSNumber numberWithInt:loading] forKey:WeeLoaderThreadDictionaryKey];
 }
 
 %hook BBServer
@@ -44,8 +43,8 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
     NSString *path = %orig;
 
     if(WeeLoaderCurrentThreadLoadingStatus() == 3) {
-        if([path hasPrefix:[NSString stringWithFormat:@"%@/", kWeeLoaderCustomPluginDirectory]]) {
-            return [NSString stringWithFormat:@"%@/%@", kWeeLoaderSerializationPrefix, path];
+        if([path hasPrefix:[NSString stringWithFormat:@"%@/", WeeLoaderCustomPluginDirectory]]) {
+            return [NSString stringWithFormat:@"%@/%@", WeeLoaderSerializationPrefix, path];
         }
     }
 
@@ -53,7 +52,7 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
 }
 
 - (void)setPathToWeeAppPluginBundle:(NSString *)path {
-    NSString *prefix = [NSString stringWithFormat:@"%@/", kWeeLoaderSerializationPrefix];
+    NSString *prefix = [NSString stringWithFormat:@"%@/", WeeLoaderSerializationPrefix];
     if([path hasPrefix:prefix]) {
         %orig([path substringFromIndex:[prefix length]]);
     } else {
@@ -69,13 +68,13 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
     switch (WeeLoaderCurrentThreadLoadingStatus()) {
         case 1: {
             NSArray *plugins = %orig(path, error);
-            NSArray *custom = %orig(kWeeLoaderCustomPluginDirectory, error);
+            NSArray *custom = %orig(WeeLoaderCustomPluginDirectory, error);
 
             return [plugins arrayByAddingObjectsFromArray:custom];
         }
         case 2: {
             NSArray *plugins = %orig(path, error);
-            NSArray *custom = %orig(kWeeLoaderCustomBulletinBoardPluginDirectory, error);
+            NSArray *custom = %orig(WeeLoaderCustomBulletinBoardPluginDirectory, error);
 
             return [plugins arrayByAddingObjectsFromArray:custom];
         }
@@ -93,8 +92,8 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
         case 1: {
             NSBundle *bundle = %orig(fullPath);
 
-            if (bundle == nil && [fullPath hasPrefix:kWeeLoaderDefaultPluginDirectory]) {
-                fullPath = [kWeeLoaderCustomPluginDirectory stringByAppendingString:[fullPath substringFromIndex:[kWeeLoaderDefaultPluginDirectory length]]];
+            if (bundle == nil && [fullPath hasPrefix:WeeLoaderDefaultPluginDirectory]) {
+                fullPath = [WeeLoaderCustomPluginDirectory stringByAppendingString:[fullPath substringFromIndex:[WeeLoaderDefaultPluginDirectory length]]];
                 bundle = %orig(fullPath);
             }
 
@@ -103,8 +102,8 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
         case 2: {
             NSBundle *bundle = %orig(fullPath);
 
-            if (bundle == nil && [fullPath hasPrefix:kWeeLoaderDefaultBulletinBoardPluginDirectory]) {
-                fullPath = [kWeeLoaderCustomBulletinBoardPluginDirectory stringByAppendingString:[fullPath substringFromIndex:[kWeeLoaderDefaultBulletinBoardPluginDirectory length]]];
+            if (bundle == nil && [fullPath hasPrefix:WeeLoaderDefaultBulletinBoardPluginDirectory]) {
+                fullPath = [WeeLoaderCustomBulletinBoardPluginDirectory stringByAppendingString:[fullPath substringFromIndex:[WeeLoaderDefaultBulletinBoardPluginDirectory length]]];
                 bundle = %orig(fullPath);
             }
 
