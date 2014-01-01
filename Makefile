@@ -1,7 +1,7 @@
 include theos/makefiles/common.mk
 
 TWEAK_NAME = WeeLoader
-WeeLoader_FILES = Tweak.xm
+WeeLoader_FILES = Tweak.x
 
 after-stage::
 	-@mkdir -p $(THEOS_STAGING_DIR)/System/Library/WeeAppPlugins
