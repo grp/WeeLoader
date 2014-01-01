@@ -2,6 +2,7 @@ include theos/makefiles/common.mk
 
 TWEAK_NAME = WeeLoader
 WeeLoader_FILES = Tweak.x
+WeeLoader_PRIVATE_FRAMEWORKS = BulletinBoard SpringBoardUIServices
 
 after-stage::
 	-@mkdir -p $(THEOS_STAGING_DIR)/System/Library/WeeAppPlugins

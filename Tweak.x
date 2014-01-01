@@ -7,6 +7,12 @@ static NSString * const WeeLoaderCustomBulletinBoardPluginDirectory = @"/Library
 
 static NSString * const WeeLoaderThreadDictionaryKey = @"WeeLoaderLoadingPlugins";
 
+extern NSArray * _SBUIWidgetBundlePaths() __attribute__((weak_import));
+extern NSArray * BBLibraryDirectoriesForFolderNamed(NSString *) __attribute__((weak_import));
+
+static NSArray * (*SBUIWidgetBundlePaths_orig)();
+static NSArray * (*BBLibraryDirectoriesForFolderNamed_orig)(NSString *);
+
 static NSInteger WeeLoaderCurrentThreadLoadingStatus() {
     return [[[[NSThread currentThread] threadDictionary] objectForKey:WeeLoaderThreadDictionaryKey] intValue];
 }
@@ -14,6 +20,8 @@ static NSInteger WeeLoaderCurrentThreadLoadingStatus() {
 static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
     [[[NSThread currentThread] threadDictionary] setObject:[NSNumber numberWithInt:loading] forKey:WeeLoaderThreadDictionaryKey];
 }
+
+%group Legacy
 
 %hook BBServer
 
@@ -116,3 +124,26 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
 
 %end
 
+%end
+
+static NSArray *BBLibraryDirectoriesForFolderNamed_hook(NSString *name) {
+    NSArray *directories = BBLibraryDirectoriesForFolderNamed_orig(name);
+    if ([name isEqualToString:[WeeLoaderDefaultBulletinBoardPluginDirectory lastPathComponent]]) {
+        directories = [directories arrayByAddingObject:WeeLoaderCustomBulletinBoardPluginDirectory];
+    }
+
+    return directories;
+}
+
+static NSArray * SBUIWidgetBundlePaths_hook() {
+    return SBUIWidgetBundlePaths_orig();
+}
+
+%ctor {
+    if ([%c(BBServer) instancesRespondToSelector:@selector(_loadAllDataProviderPluginBundles)]) {
+        %init(Legacy);
+    } else {
+        MSHookFunction(&BBLibraryDirectoriesForFolderNamed, &BBLibraryDirectoriesForFolderNamed_hook, (void **)&BBLibraryDirectoriesForFolderNamed_orig);
+        MSHookFunction(&_SBUIWidgetBundlePaths, &SBUIWidgetBundlePaths_hook, (void **)&SBUIWidgetBundlePaths_orig);
+    }
+}
