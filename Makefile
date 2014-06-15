@@ -1,3 +1,6 @@
+TARGET := iphone:clang::5.0
+ARCHS := armv7 arm64
+
 ADDITIONAL_CFLAGS += -fobjc-arc -fvisibility=hidden
 ADDITIONAL_LDFLAGS += -fobjc-arc
 
