@@ -1,6 +1,6 @@
 static NSString * const WeeLoaderDefaultPluginDirectory = @"/System/Library/WeeAppPlugins";
 static NSString * const WeeLoaderCustomPluginDirectory = @"/Library/WeeLoader/Plugins";
-static NSString * const WeeLoaderSerializationPrefix = @"/WeeLoaderFailsafePathShouldNotExist";
+static NSString * const WeeLoaderSerializationPrefix = @"/WeeLoaderFailsafePathShouldNotExist/";
 
 static NSString * const WeeLoaderDefaultBulletinBoardPluginDirectory = @"/System/Library/BulletinBoardPlugins";
 static NSString * const WeeLoaderCustomBulletinBoardPluginDirectory = @"/Library/WeeLoader/BulletinBoardPlugins";
@@ -21,6 +21,36 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
     [[[NSThread currentThread] threadDictionary] setObject:[NSNumber numberWithInt:loading] forKey:WeeLoaderThreadDictionaryKey];
 }
 
+%hook BBSectionInfo
+
+- (void)encodeWithCoder:(NSCoder *)encoder {
+    WeeLoaderSetCurrentThreadLoadingStatus(3);
+    %orig;
+    WeeLoaderSetCurrentThreadLoadingStatus(0);
+}
+
+- (NSString *)pathToWeeAppPluginBundle {
+    NSString *path = %orig;
+
+    if (WeeLoaderCurrentThreadLoadingStatus() == 3) {
+        if ([path hasPrefix:[NSString stringWithFormat:@"%@/", WeeLoaderCustomPluginDirectory]]) {
+            return [NSString stringWithFormat:@"%@%@", WeeLoaderSerializationPrefix, path];
+        }
+    }
+
+    return path;
+}
+
+- (void)setPathToWeeAppPluginBundle:(NSString *)path {
+    if ([path hasPrefix:WeeLoaderSerializationPrefix]) {
+        %orig([path substringFromIndex:[WeeLoaderSerializationPrefix length]]);
+    } else {
+        %orig(path);
+    }
+}
+
+%end
+
 %group Legacy
 
 %hook BBServer
@@ -35,37 +65,6 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
     WeeLoaderSetCurrentThreadLoadingStatus(2);
     %orig;
     WeeLoaderSetCurrentThreadLoadingStatus(0);
-}
-
-%end
-
-%hook BBSectionInfo
-
-- (void)encodeWithCoder:(NSCoder *)encoder {
-    WeeLoaderSetCurrentThreadLoadingStatus(3);
-    %orig;
-    WeeLoaderSetCurrentThreadLoadingStatus(0);
-}
-
-- (NSString *)pathToWeeAppPluginBundle {
-    NSString *path = %orig;
-
-    if(WeeLoaderCurrentThreadLoadingStatus() == 3) {
-        if([path hasPrefix:[NSString stringWithFormat:@"%@/", WeeLoaderCustomPluginDirectory]]) {
-            return [NSString stringWithFormat:@"%@/%@", WeeLoaderSerializationPrefix, path];
-        }
-    }
-
-    return path;
-}
-
-- (void)setPathToWeeAppPluginBundle:(NSString *)path {
-    NSString *prefix = [NSString stringWithFormat:@"%@/", WeeLoaderSerializationPrefix];
-    if([path hasPrefix:prefix]) {
-        %orig([path substringFromIndex:[prefix length]]);
-    } else {
-        %orig(path);
-    }
 }
 
 %end
@@ -140,6 +139,7 @@ static NSArray * SBUIWidgetBundlePaths_hook() {
 }
 
 %ctor {
+    %init;
     if ([%c(BBServer) instancesRespondToSelector:@selector(_loadAllDataProviderPluginBundles)]) {
         %init(Legacy);
     } else {
