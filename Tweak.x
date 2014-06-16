@@ -135,7 +135,15 @@ static NSArray *BBLibraryDirectoriesForFolderNamed_hook(NSString *name) {
 }
 
 static NSArray * SBUIWidgetBundlePaths_hook() {
-    return SBUIWidgetBundlePaths_orig();
+    NSMutableArray *paths = [NSMutableArray arrayWithArray:SBUIWidgetBundlePaths_orig()];
+    NSArray *additionalPaths = [NSFileManager.defaultManager contentsOfDirectoryAtPath:WeeLoaderCustomPluginDirectory error:NULL];
+    for (NSString *basename in additionalPaths) {
+        if ([basename hasSuffix:@".bundle"]) {
+            NSString *bundlePath = [WeeLoaderCustomPluginDirectory stringByAppendingPathComponent:basename];
+            [paths addObject:bundlePath];
+        }
+    }
+    return paths;
 }
 
 %ctor {
