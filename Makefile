@@ -6,6 +6,7 @@ ADDITIONAL_LDFLAGS += -fobjc-arc
 
 TWEAK_NAME = WeeLoader
 WeeLoader_FILES = Tweak.x
+WeeLoader_FRAMEWORKS = UIKit
 WeeLoader_PRIVATE_FRAMEWORKS = BulletinBoard SpringBoardUIServices
 
 after-stage::
