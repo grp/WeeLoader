@@ -10,11 +10,11 @@ static NSString * const WeeLoaderCustomBulletinBoardPluginDirectory = @"/Library
 static NSString * const WeeLoaderThreadDictionaryKey = @"WeeLoaderLoadingPlugins";
 
 static NSInteger WeeLoaderCurrentThreadLoadingStatus() {
-    return [[[[NSThread currentThread] threadDictionary] objectForKey:WeeLoaderThreadDictionaryKey] intValue];
+    return [NSThread.currentThread.threadDictionary[WeeLoaderThreadDictionaryKey] intValue];
 }
 
 static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
-    [[[NSThread currentThread] threadDictionary] setObject:[NSNumber numberWithInt:loading] forKey:WeeLoaderThreadDictionaryKey];
+    NSThread.currentThread.threadDictionary[WeeLoaderThreadDictionaryKey] = @(loading);
 }
 
 %hook BBSectionInfo
@@ -29,8 +29,8 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
     NSString *path = %orig;
 
     if (WeeLoaderCurrentThreadLoadingStatus() == 3) {
-        if ([path hasPrefix:[NSString stringWithFormat:@"%@/", WeeLoaderCustomPluginDirectory]]) {
-            return [NSString stringWithFormat:@"%@%@", WeeLoaderSerializationPrefix, path];
+        if ([path hasPrefix:WeeLoaderCustomPluginDirectory]) {
+            return [WeeLoaderSerializationPrefix stringByAppendingString:path];
         }
     }
 
@@ -39,9 +39,9 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
 
 - (void)setPathToWeeAppPluginBundle:(NSString *)path {
     if ([path hasPrefix:WeeLoaderSerializationPrefix]) {
-        %orig([path substringFromIndex:[WeeLoaderSerializationPrefix length]]);
+        %orig([path substringFromIndex:WeeLoaderSerializationPrefix.length]);
     } else {
-        %orig(path);
+        %orig;
     }
 }
 
@@ -70,13 +70,13 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
 - (NSArray *)contentsOfDirectoryAtPath:(NSString *)path error:(NSError **)error {
     switch (WeeLoaderCurrentThreadLoadingStatus()) {
         case 1: {
-            NSArray *plugins = %orig(path, error);
+            NSArray *plugins = %orig;
             NSArray *custom = %orig(WeeLoaderCustomPluginDirectory, error);
 
             return [plugins arrayByAddingObjectsFromArray:custom];
         }
         case 2: {
-            NSArray *plugins = %orig(path, error);
+            NSArray *plugins = %orig;
             NSArray *custom = %orig(WeeLoaderCustomBulletinBoardPluginDirectory, error);
 
             return [plugins arrayByAddingObjectsFromArray:custom];
@@ -93,7 +93,7 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
 + (NSBundle *)bundleWithPath:(NSString *)fullPath {
     switch (WeeLoaderCurrentThreadLoadingStatus()) {
         case 1: {
-            NSBundle *bundle = %orig(fullPath);
+            NSBundle *bundle = %orig;
 
             if (bundle == nil && [fullPath hasPrefix:WeeLoaderDefaultPluginDirectory]) {
                 fullPath = [WeeLoaderCustomPluginDirectory stringByAppendingString:[fullPath substringFromIndex:[WeeLoaderDefaultPluginDirectory length]]];
@@ -103,7 +103,7 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
             return bundle;
         }
         case 2: {
-            NSBundle *bundle = %orig(fullPath);
+            NSBundle *bundle = %orig;
 
             if (bundle == nil && [fullPath hasPrefix:WeeLoaderDefaultBulletinBoardPluginDirectory]) {
                 fullPath = [WeeLoaderCustomBulletinBoardPluginDirectory stringByAppendingString:[fullPath substringFromIndex:[WeeLoaderDefaultBulletinBoardPluginDirectory length]]];
@@ -301,13 +301,12 @@ typedef NS_ENUM(NSInteger, WeeLoaderLegacyControllerViewState) {
 
 @end
 
-extern NSArray *BBLibraryDirectoriesForFolderNamed(NSString *) __attribute__((weak_import));
+extern NSArray *BBLibraryDirectoriesForFolderNamed(NSString *name) __attribute__((weak_import));
 MSHook(NSArray *,BBLibraryDirectoriesForFolderNamed, NSString *name) {
     NSArray *directories = _BBLibraryDirectoriesForFolderNamed(name);
-    if ([name isEqualToString:[WeeLoaderDefaultBulletinBoardPluginDirectory lastPathComponent]]) {
+    if ([name isEqualToString:WeeLoaderDefaultBulletinBoardPluginDirectory.lastPathComponent]) {
         directories = [directories arrayByAddingObject:WeeLoaderCustomBulletinBoardPluginDirectory];
     }
-
     return directories;
 }
 
