@@ -7,12 +7,6 @@ static NSString * const WeeLoaderCustomBulletinBoardPluginDirectory = @"/Library
 
 static NSString * const WeeLoaderThreadDictionaryKey = @"WeeLoaderLoadingPlugins";
 
-extern NSArray * _SBUIWidgetBundlePaths() __attribute__((weak_import));
-extern NSArray * BBLibraryDirectoriesForFolderNamed(NSString *) __attribute__((weak_import));
-
-static NSArray * (*SBUIWidgetBundlePaths_orig)();
-static NSArray * (*BBLibraryDirectoriesForFolderNamed_orig)(NSString *);
-
 static NSInteger WeeLoaderCurrentThreadLoadingStatus() {
     return [[[[NSThread currentThread] threadDictionary] objectForKey:WeeLoaderThreadDictionaryKey] intValue];
 }
@@ -125,8 +119,9 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
 
 %end
 
-static NSArray *BBLibraryDirectoriesForFolderNamed_hook(NSString *name) {
-    NSArray *directories = BBLibraryDirectoriesForFolderNamed_orig(name);
+extern NSArray *BBLibraryDirectoriesForFolderNamed(NSString *) __attribute__((weak_import));
+MSHook(NSArray *,BBLibraryDirectoriesForFolderNamed, NSString *name) {
+    NSArray *directories = _BBLibraryDirectoriesForFolderNamed(name);
     if ([name isEqualToString:[WeeLoaderDefaultBulletinBoardPluginDirectory lastPathComponent]]) {
         directories = [directories arrayByAddingObject:WeeLoaderCustomBulletinBoardPluginDirectory];
     }
@@ -134,8 +129,9 @@ static NSArray *BBLibraryDirectoriesForFolderNamed_hook(NSString *name) {
     return directories;
 }
 
-static NSArray * SBUIWidgetBundlePaths_hook() {
-    NSMutableArray *paths = [NSMutableArray arrayWithArray:SBUIWidgetBundlePaths_orig()];
+extern NSArray *_SBUIWidgetBundlePaths() __attribute__((weak_import));
+MSHook(NSArray *, _SBUIWidgetBundlePaths) {
+    NSMutableArray *paths = [NSMutableArray arrayWithArray:__SBUIWidgetBundlePaths()];
     NSArray *additionalPaths = [NSFileManager.defaultManager contentsOfDirectoryAtPath:WeeLoaderCustomPluginDirectory error:NULL];
     for (NSString *basename in additionalPaths) {
         if ([basename hasSuffix:@".bundle"]) {
@@ -151,7 +147,7 @@ static NSArray * SBUIWidgetBundlePaths_hook() {
     if ([%c(BBServer) instancesRespondToSelector:@selector(_loadAllDataProviderPluginBundles)]) {
         %init(Legacy);
     } else {
-        MSHookFunction(&BBLibraryDirectoriesForFolderNamed, &BBLibraryDirectoriesForFolderNamed_hook, (void **)&BBLibraryDirectoriesForFolderNamed_orig);
-        MSHookFunction(&_SBUIWidgetBundlePaths, &SBUIWidgetBundlePaths_hook, (void **)&SBUIWidgetBundlePaths_orig);
+        MSHookFunction(BBLibraryDirectoriesForFolderNamed, $BBLibraryDirectoriesForFolderNamed, (void **)&_BBLibraryDirectoriesForFolderNamed);
+        MSHookFunction(_SBUIWidgetBundlePaths, $_SBUIWidgetBundlePaths, (void **)&__SBUIWidgetBundlePaths);
     }
 }
