@@ -140,7 +140,6 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
 - (void)hostWillPresent;
 - (void)hostDidDismiss;
 - (CGSize)preferredViewSize;
-- (void)requestLaunchOfURL:(NSURL *)url;
 @end
 
 typedef NS_ENUM(NSInteger, WeeLoaderLegacyControllerViewState) {
