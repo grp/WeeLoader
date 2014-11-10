@@ -29,6 +29,7 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
 @property (copy, nonatomic) NSString *pathToWeeAppPluginBundle;
 @property (copy, nonatomic) NSString *displayName;
 @property (copy, nonatomic) BBSectionIcon *icon;
+@property (assign, nonatomic) BOOL showsInNotificationCenter;
 @end
 
 %hook BBSectionInfo
@@ -186,6 +187,17 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
 }
 %end
 
+%hook SBWidgetsSettingsViewController
+- (BOOL)_setSectionInfo:(BBSectionInfo *)sectionInfo enabled:(BOOL)enabled {
+    BOOL success = %orig;
+    if (!success && [sectionInfo.pathToWeeAppPluginBundle hasPrefix:WeeLoaderCustomPluginDirectory]) {
+        sectionInfo.showsInNotificationCenter = enabled;
+        success = YES;
+    }
+    return success;
+}
+%end
+
 %end
 
 @interface WeeLoaderLegacyView: UIView
@@ -324,6 +336,13 @@ typedef NS_ENUM(NSInteger, WeeLoaderLegacyControllerViewState) {
 }
 
 - (void)viewDidAppear:(BOOL)animated {
+    // On iOS 8, -hostWillPresent might never be called (e.g. when we are disabled and then re-enabled), so
+    // let's make sure we load the full view somewhere.  We could do this in -loadView or -viewWillAppear
+    // instead, but if we wait for -viewDidAppear the widget gets better initial size info.
+    if ([%c(SBNotificationCenterDataProviderController) instancesRespondToSelector:@selector(beginPublishingIfNecessary)]) { // iOS 8
+        [self hostWillPresent];
+    }
+
     if ([_weeAppController respondsToSelector:@selector(viewDidAppear)]) {
         [_weeAppController viewDidAppear];
     }
@@ -414,7 +433,7 @@ MSHook(CFDictionaryRef, CFBundleGetInfoDictionary, CFBundleRef bundle) {
         MSHookFunction(BBLibraryDirectoriesForFolderNamed, $BBLibraryDirectoriesForFolderNamed, (void **)&_BBLibraryDirectoriesForFolderNamed);
         MSHookFunction(_SBUIWidgetBundlePaths, $_SBUIWidgetBundlePaths, (void **)&__SBUIWidgetBundlePaths);
         MSHookFunction(CFBundleGetInfoDictionary, $CFBundleGetInfoDictionary, (void **)&_CFBundleGetInfoDictionary);
-        if ([%c(SBNotificationCenterDataProviderController) instancesRespondToSelector:@selector(beginPublishingIfNecessary)]) {
+        if ([%c(SBNotificationCenterDataProviderController) instancesRespondToSelector:@selector(beginPublishingIfNecessary)]) { // iOS 8
             %init(iOS_8);
         }
     }
