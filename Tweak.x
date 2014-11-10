@@ -17,6 +17,20 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
     NSThread.currentThread.threadDictionary[WeeLoaderThreadDictionaryKey] = @(loading);
 }
 
+@interface BBSectionIconVariant: NSObject
++ (id)variantWithFormat:(int)format imageName:(NSString *)name inBundle:(NSBundle *)bundle;
+@end
+
+@interface BBSectionIcon: NSObject
+- (void)addVariant:(BBSectionIconVariant *)variant;
+@end
+
+@interface BBSectionInfo: NSObject
+@property (copy, nonatomic) NSString *pathToWeeAppPluginBundle;
+@property (copy, nonatomic) NSString *displayName;
+@property (copy, nonatomic) BBSectionIcon *icon;
+@end
+
 %hook BBSectionInfo
 
 - (void)encodeWithCoder:(NSCoder *)encoder {
@@ -47,7 +61,7 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
 
 %end
 
-%group Legacy
+%group iOS_5_and_6
 
 %hook BBServer
 
@@ -117,6 +131,59 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
     }
 }
 
+%end
+
+%end
+
+%group iOS_8
+
+@interface SBNotificationCenterDataProvider: NSObject
+- (BBSectionInfo *)defaultSectionInfo;
+@end
+
+@interface SBNotificationCenterDataProviderController: NSObject
++ (id)sharedInstance;
+- (BBSectionInfo *)_sectionForWidgetExtension:(id)extension withSectionID:(NSString *)sectionID forCategory:(int)category;
+- (void)_publishWidgetSection:(BBSectionInfo *)sectionInfo withExtension:(id)extension defaultEnabledWeeAppIDs:(NSArray *)ids;
+@end
+
+%hook SBNotificationCenterDataProvider
+
+- (NSString *)sectionDisplayName {
+    return %orig ?: self.defaultSectionInfo.displayName;
+}
+
+- (BBSectionIcon *)sectionIcon {
+    return %orig ?: self.defaultSectionInfo.icon;
+}
+
+%end
+
+%hook SpringBoard
+- (void)_startBulletinBoardServer {
+    %orig;
+    SBNotificationCenterDataProviderController *controller = [%c(SBNotificationCenterDataProviderController) sharedInstance];
+    for (NSString *basename in [NSFileManager.defaultManager contentsOfDirectoryAtPath:WeeLoaderCustomPluginDirectory error:NULL]) {
+        if ([basename hasSuffix:@".bundle"]) {
+            NSString *path = [WeeLoaderCustomPluginDirectory stringByAppendingPathComponent:basename];
+            NSBundle *bundle = [NSBundle bundleWithPath:path];
+            if (bundle) {
+                NSString *sectionID = bundle.bundleIdentifier;
+                BBSectionInfo *sectionInfo = [controller _sectionForWidgetExtension:nil withSectionID:sectionID forCategory:1];
+                sectionInfo.pathToWeeAppPluginBundle = path;
+                sectionInfo.displayName = bundle.infoDictionary[@"CFBundleDisplayName"];
+                NSString *iconName = bundle.infoDictionary[@"CFBundleIconFile"];
+                if (iconName) {
+                    BBSectionIconVariant *iconVariant = [BBSectionIconVariant variantWithFormat:0 imageName:iconName inBundle:bundle];
+                    BBSectionIcon *sectionIcon = [[BBSectionIcon alloc] init];
+                    [sectionIcon addVariant:iconVariant];
+                    sectionInfo.icon = sectionIcon;
+                }
+                [controller _publishWidgetSection:sectionInfo withExtension:nil defaultEnabledWeeAppIDs:@[sectionID]];
+            }
+        }
+    }
+}
 %end
 
 %end
@@ -341,11 +408,14 @@ MSHook(CFDictionaryRef, CFBundleGetInfoDictionary, CFBundleRef bundle) {
 
 %ctor {
     %init;
-    if ([%c(BBServer) instancesRespondToSelector:@selector(_loadAllDataProviderPluginBundles)]) {
-        %init(Legacy);
-    } else {
+    if ([%c(BBServer) instancesRespondToSelector:@selector(_loadAllDataProviderPluginBundles)]) { // iOS 5, 6
+        %init(iOS_5_and_6);
+    } else { // iOS 7, 8
         MSHookFunction(BBLibraryDirectoriesForFolderNamed, $BBLibraryDirectoriesForFolderNamed, (void **)&_BBLibraryDirectoriesForFolderNamed);
         MSHookFunction(_SBUIWidgetBundlePaths, $_SBUIWidgetBundlePaths, (void **)&__SBUIWidgetBundlePaths);
         MSHookFunction(CFBundleGetInfoDictionary, $CFBundleGetInfoDictionary, (void **)&_CFBundleGetInfoDictionary);
+        if ([%c(SBNotificationCenterDataProviderController) instancesRespondToSelector:@selector(beginPublishingIfNecessary)]) {
+            %init(iOS_8);
+        }
     }
 }
