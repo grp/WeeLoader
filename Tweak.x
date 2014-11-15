@@ -17,11 +17,11 @@ static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
     NSThread.currentThread.threadDictionary[WeeLoaderThreadDictionaryKey] = @(loading);
 }
 
-@interface BBSectionIconVariant: NSObject
+__attribute__((weak_import)) @interface BBSectionIconVariant: NSObject
 + (id)variantWithFormat:(int)format imageName:(NSString *)name inBundle:(NSBundle *)bundle;
 @end
 
-@interface BBSectionIcon: NSObject
+__attribute__((weak_import)) @interface BBSectionIcon: NSObject
 - (void)addVariant:(BBSectionIconVariant *)variant;
 @end
 
