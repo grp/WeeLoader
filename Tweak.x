@@ -249,7 +249,7 @@ typedef NS_ENUM(NSInteger, WeeLoaderLegacyControllerViewState) {
     if ([_weeAppController respondsToSelector:@selector(launchURLForTapLocation:)]) {
         UITapGestureRecognizer *tapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(launchURLForTapLocationFromRecognizer:)];
         [self.view addGestureRecognizer:tapRecognizer];
-    } else if ([_weeAppController respondsToSelector:@selector(launchURL:)]) {
+    } else if ([_weeAppController respondsToSelector:@selector(launchURL)]) {
         UITapGestureRecognizer *tapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(launchURL)];
         [self.view addGestureRecognizer:tapRecognizer];
     }
