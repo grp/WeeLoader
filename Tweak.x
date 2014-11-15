@@ -172,7 +172,9 @@ __attribute__((weak_import)) @interface BBSectionIcon: NSObject
                 NSString *sectionID = bundle.bundleIdentifier;
                 BBSectionInfo *sectionInfo = [controller _sectionForWidgetExtension:nil withSectionID:sectionID forCategory:1];
                 sectionInfo.pathToWeeAppPluginBundle = path;
-                sectionInfo.displayName = bundle.infoDictionary[@"CFBundleDisplayName"];
+                NSString *displayName = bundle.infoDictionary[@"CFBundleDisplayName"] ?: bundle.bundleIdentifier;
+                displayName = [bundle localizedStringForKey:displayName value:nil table:@"InfoPlist"];
+                sectionInfo.displayName = displayName;
                 NSString *iconName = bundle.infoDictionary[@"CFBundleIconFile"];
                 if (iconName) {
                     BBSectionIconVariant *iconVariant = [BBSectionIconVariant variantWithFormat:0 imageName:iconName inBundle:bundle];
