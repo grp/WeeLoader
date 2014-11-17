@@ -1,6 +1,6 @@
 Homepage: http://moreinfo.thebigboss.org/moreinfo/depiction.php?file=weeloaderDp
 Depiction: http://moreinfo.thebigboss.org/moreinfo/depiction.php?file=weeloaderDp
-Author: chpwn <support@chpwn.com>
+Author: joedj <weeloader@joedj.net>
 Maintainer: BigBoss <bigboss@thebigboss.org>
 Name: WeeLoader
 Package: com.chpwn.weeloader
@@ -11,5 +11,5 @@ Version: 1.3
 Architecture: iphoneos-arm
 Description: Weeeeeeeeeee! Load Wee apps safely.
 Sponsor: thebigboss.org <http://thebigboss.org>
-dev: chpwn
+dev: joejordan
 Tag: role::developer, purpose::extension
