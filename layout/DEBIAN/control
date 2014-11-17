@@ -7,7 +7,7 @@ Package: com.chpwn.weeloader
 Pre-Depends: firmware (>= 5.0)
 Depends: mobilesubstrate
 Section: Development
-Version: 1.3
+Version: 1.4
 Architecture: iphoneos-arm
 Description: Weeeeeeeeeee! Load Wee apps safely.
 Sponsor: thebigboss.org <http://thebigboss.org>
