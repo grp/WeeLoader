@@ -4,5 +4,5 @@ WeeLoader is similar to PreferenceLoader, but for WeeAppPlugins rather than Pref
 
 To use WeeLoader with your plugins, simply move your bundles from `/System/Library/WeeAppPlugins/` to `/Library/WeeLoader/Plugins/` (for Wee apps) or `/System/Library/BulletinBoardPlugins/` to `/Library/WeeLoader/BulletinBoardPlugins` (for Bulletin Board plugins), and update any hardcoded paths in your code (if necessary). You'll also want to add a dependency on `com.chpwn.weeloader` to ensure WeeLoader is installed.
 
-
+In addition, WeeLoader adds a compatibility layer so that iOS 5/6 Wee apps (i.e. those implementing the `BBWeeAppController` protocol) work on iOS 7 and iOS 8.
 
