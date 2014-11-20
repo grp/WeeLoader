@@ -172,7 +172,7 @@ __attribute__((weak_import)) @interface BBSectionIcon: NSObject
                 NSString *sectionID = bundle.bundleIdentifier;
                 BBSectionInfo *sectionInfo = [controller _sectionForWidgetExtension:nil withSectionID:sectionID forCategory:1];
                 sectionInfo.pathToWeeAppPluginBundle = path;
-                NSString *displayName = [bundle.infoDictionary objectForKey:@"CFBundleDisplayName"] ?: bundle.bundleIdentifier;
+                NSString *displayName = [bundle.infoDictionary objectForKey:@"CFBundleDisplayName"] ?: sectionID;
                 displayName = [bundle localizedStringForKey:displayName value:nil table:@"InfoPlist"];
                 sectionInfo.displayName = displayName;
                 NSString *iconName = [bundle.infoDictionary objectForKey:@"CFBundleIconFile"];
@@ -182,7 +182,7 @@ __attribute__((weak_import)) @interface BBSectionIcon: NSObject
                     [sectionIcon addVariant:iconVariant];
                     sectionInfo.icon = sectionIcon;
                 }
-                [controller _publishWidgetSection:sectionInfo withExtension:nil defaultEnabledWeeAppIDs:@[sectionID]];
+                [controller _publishWidgetSection:sectionInfo withExtension:nil defaultEnabledWeeAppIDs:@[]];
             }
         }
     }
