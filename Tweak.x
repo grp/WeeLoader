@@ -10,11 +10,11 @@ static NSString * const WeeLoaderCustomBulletinBoardPluginDirectory = @"/Library
 static NSString * const WeeLoaderThreadDictionaryKey = @"WeeLoaderLoadingPlugins";
 
 static NSInteger WeeLoaderCurrentThreadLoadingStatus() {
-    return [NSThread.currentThread.threadDictionary[WeeLoaderThreadDictionaryKey] intValue];
+    return [[NSThread.currentThread.threadDictionary objectForKey:WeeLoaderThreadDictionaryKey] intValue];
 }
 
 static void WeeLoaderSetCurrentThreadLoadingStatus(NSInteger loading) {
-    NSThread.currentThread.threadDictionary[WeeLoaderThreadDictionaryKey] = @(loading);
+    [NSThread.currentThread.threadDictionary setObject:@(loading) forKey:WeeLoaderThreadDictionaryKey];
 }
 
 __attribute__((weak_import)) @interface BBSectionIconVariant: NSObject
@@ -172,10 +172,10 @@ __attribute__((weak_import)) @interface BBSectionIcon: NSObject
                 NSString *sectionID = bundle.bundleIdentifier;
                 BBSectionInfo *sectionInfo = [controller _sectionForWidgetExtension:nil withSectionID:sectionID forCategory:1];
                 sectionInfo.pathToWeeAppPluginBundle = path;
-                NSString *displayName = bundle.infoDictionary[@"CFBundleDisplayName"] ?: bundle.bundleIdentifier;
+                NSString *displayName = [bundle.infoDictionary objectForKey:@"CFBundleDisplayName"] ?: bundle.bundleIdentifier;
                 displayName = [bundle localizedStringForKey:displayName value:nil table:@"InfoPlist"];
                 sectionInfo.displayName = displayName;
-                NSString *iconName = bundle.infoDictionary[@"CFBundleIconFile"];
+                NSString *iconName = [bundle.infoDictionary objectForKey:@"CFBundleIconFile"];
                 if (iconName) {
                     BBSectionIconVariant *iconVariant = [BBSectionIconVariant variantWithFormat:0 imageName:iconName inBundle:bundle];
                     BBSectionIcon *sectionIcon = [[BBSectionIcon alloc] init];
@@ -415,11 +415,12 @@ MSHook(CFDictionaryRef, CFBundleGetInfoDictionary, CFBundleRef bundle) {
     NSURL *bundleURL = (__bridge_transfer NSURL *)CFBundleCopyBundleURL(bundle);
     if ([bundleURL.URLByDeletingLastPathComponent.path isEqualToString:WeeLoaderCustomPluginDirectory]) {
         NSDictionary *infoDict = (__bridge NSDictionary *)cf_infoDictionary;
-        if (!infoDict[@"SBUIWidgetViewControllers"]) {
+        if (![infoDict objectForKey:@"SBUIWidgetViewControllers"]) {
             CFMutableDictionaryRef newInfoDict = CFDictionaryCreateMutableCopy(NULL, infoDict.count + 1, cf_infoDictionary);
-            ((__bridge NSMutableDictionary *)newInfoDict)[@"SBUIWidgetViewControllers"] = @{
+            NSDictionary *widgetControllers = @{
                 @"SBUIWidgetIdiomNotificationCenterToday" : NSStringFromClass(WeeLoaderLegacyController.class)
             };
+            [((__bridge NSMutableDictionary *)newInfoDict) setObject:widgetControllers forKey:@"SBUIWidgetViewControllers"];
             CFAutorelease(newInfoDict);
             return newInfoDict;
         }
